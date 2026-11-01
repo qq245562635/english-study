@@ -1,0 +1,11 @@
+.git
+.wrangler
+node_modules
+worker
+tools
+wrangler.toml
+package.json
+package-lock.json
+.dev.vars
+README.md
+DEPLOY.md

@@ -30,19 +30,108 @@
   };
   let S = load();
 
+  function normalize(d) {
+    return { ...JSON.parse(JSON.stringify(DEFAULT)), ...d, settings: { ...DEFAULT.settings, ...((d && d.settings) || {}) } };
+  }
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) {
-        const d = JSON.parse(raw);
-        return { ...DEFAULT, ...d, settings: { ...DEFAULT.settings, ...(d.settings || {}) } };
-      }
+      if (raw) return normalize(JSON.parse(raw));
     } catch (e) { /* 浏览器不允许存储时就用默认值 */ }
-    return JSON.parse(JSON.stringify(DEFAULT));
+    return normalize({});
   }
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* 忽略 */ }
+    Sync.schedule();
   }
+
+  // ---------- 云端同步（部署在 Cloudflare 上时可用） ----------
+  const Sync = (function () {
+    const TOKEN_KEY = "english-study-sync-token";
+    let available = false;   // 服务器是否存在并已配置
+    let timer = null;
+    let status = "";         // 给“我的”页面显示
+    let lastOk = 0;
+    const listeners = [];
+
+    function token() { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
+    function setToken(t) {
+      try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch (e) { /* 忽略 */ }
+    }
+    function on() { return available && !!token(); }
+    function setStatus(s) { status = s; listeners.forEach((f) => f()); }
+
+    async function call(method, body, keepalive) {
+      const res = await fetch("api/progress", {
+        method,
+        headers: { authorization: "Bearer " + token(), "content-type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+        keepalive: !!keepalive,
+        cache: "no-store",
+      });
+      if (res.status === 401) throw new Error("unauthorized");
+      if (!res.ok) throw new Error("http " + res.status);
+      return res.json();
+    }
+    function adopt(remote) {
+      S = normalize(window.mergeProgress(S, remote));
+      try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* 忽略 */ }
+    }
+    function fail(e) {
+      setStatus(e.message === "unauthorized" ? "同步密码不对" : navigator.onLine === false ? "没有网络，联网后会自动同步" : "同步失败，稍后会重试");
+      return false;
+    }
+    async function pull() {
+      if (!on()) return false;
+      try {
+        adopt(await call("GET"));
+        lastOk = Date.now();
+        setStatus("已同步");
+        return true;
+      } catch (e) { return fail(e); }
+    }
+    async function push(keepalive) {
+      clearTimeout(timer); timer = null;
+      if (!on()) return false;
+      try {
+        adopt(await call("PUT", S, keepalive));
+        lastOk = Date.now();
+        setStatus("已同步");
+        return true;
+      } catch (e) { return fail(e); }
+    }
+    function schedule() {
+      if (!on()) return;
+      setStatus("等待上传……");
+      clearTimeout(timer);
+      timer = setTimeout(() => push(), 2000);
+    }
+    async function init() {
+      try {
+        const r = await fetch("api/ping", { cache: "no-store" });
+        const d = r.ok ? await r.json() : null;
+        available = !!(d && d.configured);
+      } catch (e) { available = false; }
+      if (on()) await pull();
+      setStatus(status);
+      return available;
+    }
+    // 切到后台或关闭页面时，立刻把没传的记录传上去
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden" && timer) push(true);
+      if (document.visibilityState === "visible" && on()) pull().then((ok) => ok && refresh());
+    });
+    window.addEventListener("online", () => on() && push());
+
+    return {
+      init, pull, push, schedule, on, token, setToken,
+      get available() { return available; },
+      get status() { return status; },
+      get lastOk() { return lastOk; },
+      onChange(f) { listeners.push(f); },
+      async remove() { if (on()) await call("DELETE"); },
+    };
+  })();
 
   // ---------- 日期工具 ----------
   function dayStr(d) {
@@ -166,6 +255,7 @@
     else if (g === 1) st.box = Math.max(1, Math.min(st.box, 2));
     else st.box = Math.min(INTERVALS.length - 1, st.box + 1);
     st.due = g === 0 ? t : addDays(t, INTERVALS[st.box]);
+    st.last = Date.now();
     save();
   }
 
@@ -272,6 +362,7 @@
 
   // ---------- 单词卡片流程 ----------
   function startWordSession(extraNew) {
+    currentTab = "session";
     const reviews = dueWords().slice(0, REVIEW_CAP).map((x) => ({ ...x, isNew: false }));
     const nNew = extraNew != null ? extraNew : newWordsLeftToday();
     const news = nextNewWords(nNew).map((x) => ({ ...x, isNew: true }));
@@ -391,6 +482,7 @@
   }
 
   function startPhraseSession(extra) {
+    currentTab = "session";
     let list;
     if (extra) list = ALL_PHRASES.filter((p) => !S.phrases[p.id]).slice(0, extra);
     else list = todaysPhrases().next;
@@ -502,8 +594,9 @@
         <div class="setting"><span>朗读速度</span><select id="sRate">${opt([0.7, 0.8, 0.9, 1], st.rate, (v) => ({ 0.7: "很慢", 0.8: "慢", 0.9: "稍慢", 1: "正常" }[v]))}</select></div>
         <div class="setting"><span>试听</span><button class="btn" data-say="Hi, nice to meet you. How's it going?">🔊 试听</button></div>
       </div>
-      <div class="card"><h2>备份和换设备</h2>
-        <p class="muted small">学习记录只保存在当前浏览器里。换手机或电脑时，先在旧设备“导出”，再到新设备“导入”。</p>
+      ${syncCard()}
+      <div class="card"><h2>备份</h2>
+        <p class="muted small">${Sync.on() ? "已开启云端同步，记录会自动保存。也可以再导出一份文件留作备份。" : "没开云端同步时，学习记录只保存在当前浏览器里。可以导出文件备份，或在新设备上导入。"}</p>
         <div class="row wrap">
           <button class="btn" id="exp">⬇️ 导出记录</button>
           <label class="btn">⬆️ 导入记录<input type="file" id="imp" accept="application/json" hidden></label>
@@ -512,7 +605,8 @@
         <button class="btn bad" id="reset">清空所有记录</button>
       </div>
       <p class="muted small" style="text-align:center">词库 ${WORDS.length} 词 · ${SCENES.length} 个场景 ${ALL_PHRASES.length} 句</p>`);
-    const num = (id, key) => (document.getElementById(id).onchange = (e) => { S.settings[key] = Number(e.target.value); save(); toast("已保存"); });
+    const num = (id, key) => (document.getElementById(id).onchange = (e) => { S.settings[key] = Number(e.target.value); S.settingsAt = Date.now(); save(); toast("已保存"); });
+    bindSync();
     num("sNew", "newPerDay"); num("sPh", "phrasesPerDay"); num("sRate", "rate");
     document.getElementById("exp").onclick = () => {
       const blob = new Blob([JSON.stringify(S, null, 1)], { type: "application/json" });
@@ -529,16 +623,68 @@
         try {
           const d = JSON.parse(txt);
           if (!d.words || !d.days) throw new Error("bad");
-          S = { ...DEFAULT, ...d, settings: { ...DEFAULT.settings, ...(d.settings || {}) } };
+          S = normalize(d);
           save(); updateStreak(); renderMe(); toast("导入成功");
         } catch (err) { toast("文件格式不对，导入失败"); }
       });
     };
     document.getElementById("reset").onclick = () => {
-      if (confirm("确定要清空所有学习记录吗？这个操作不能撤销。")) {
-        S = JSON.parse(JSON.stringify(DEFAULT)); save(); updateStreak(); renderMe(); toast("已清空");
+      if (confirm("确定要清空所有学习记录吗？" + (Sync.on() ? "云端的记录也会一起清空，" : "") + "这个操作不能撤销。")) {
+        Sync.remove().catch(() => {}).then(() => {
+          S = normalize({}); save(); updateStreak(); renderMe(); toast("已清空");
+        });
       }
     };
+  }
+
+  // ---------- 云端同步卡片 ----------
+  function syncCard() {
+    if (!Sync.available) {
+      return `<div class="card"><h2>☁️ 云端同步</h2><p class="muted small">在 Cloudflare 网址上打开这个网页，就能把学习记录保存到云端，换设备、清缓存都不会丢。</p></div>`;
+    }
+    if (!Sync.token()) {
+      return `<div class="card"><h2>☁️ 云端同步</h2>
+        <p class="muted small">输入你在 Cloudflare 里设置的同步密码。每台设备只需要输入一次。</p>
+        <input class="search" id="syncPw" type="password" autocomplete="current-password" placeholder="同步密码">
+        <button class="btn primary block" id="syncOn">开启同步</button></div>`;
+    }
+    const t = Sync.lastOk ? new Date(Sync.lastOk).toLocaleTimeString() : "";
+    return `<div class="card"><h2>☁️ 云端同步 <span class="pill s3">已开启</span></h2>
+      <p class="muted small" id="syncStatus">${esc(Sync.status || "")}${t && Sync.status === "已同步" ? "（" + t + "）" : ""}</p>
+      <div class="row wrap"><button class="btn" id="syncNow">🔄 立即同步</button><button class="btn" id="syncOff">在这台设备上关闭</button></div></div>`;
+  }
+  function bindSync() {
+    const g = (id) => document.getElementById(id);
+    if (g("syncOn")) g("syncOn").onclick = async () => {
+      const pw = g("syncPw").value.trim();
+      if (!pw) { toast("请输入同步密码"); return; }
+      Sync.setToken(pw);
+      g("syncOn").disabled = true;
+      const ok = await Sync.pull();
+      if (!ok) { Sync.setToken(""); g("syncOn").disabled = false; toast(Sync.status || "开启失败"); return; }
+      await Sync.push();
+      toast("同步已开启，进度已合并");
+      updateStreak(); renderMe();
+    };
+    if (g("syncNow")) g("syncNow").onclick = async () => {
+      const ok = (await Sync.pull()) && (await Sync.push());
+      toast(ok ? "同步完成" : Sync.status);
+      updateStreak(); renderMe();
+    };
+    if (g("syncOff")) g("syncOff").onclick = () => {
+      if (confirm("在这台设备上关闭同步？云端的记录会保留。")) { Sync.setToken(""); renderMe(); }
+    };
+  }
+  Sync.onChange(() => {
+    const el = document.getElementById("syncStatus");
+    if (el) el.textContent = Sync.status + (Sync.status === "已同步" && Sync.lastOk ? "（" + new Date(Sync.lastOk).toLocaleTimeString() + "）" : "");
+  });
+
+  // 同步拉到新数据后，刷新当前页面（正在做单词卡片或跟读时不打断）
+  let currentTab = "today";
+  function refresh() {
+    if (PAGES[currentTab]) PAGES[currentTab]();
+    updateStreak();
   }
 
   // ---------- 导航 ----------
@@ -548,9 +694,11 @@
     player.pause();
     document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
     window.scrollTo(0, 0);
+    currentTab = tab;
     PAGES[tab]();
     updateStreak();
   }
   document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => go(b.dataset.tab)));
   go("today");
+  Sync.init().then(() => refresh());
 })();

@@ -1,0 +1,13 @@
+name = "english-study"
+main = "worker/index.js"
+compatibility_date = "2026-10-01"
+
+# 网页文件（index.html、audio/ 等）直接作为静态资源提供；不需要公开的文件写在 .assetsignore 里
+[assets]
+directory = "."
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+# 保存学习记录的 KV 存储。第一次部署时 Cloudflare 会自动创建。
+[[kv_namespaces]]
+binding = "PROGRESS"
