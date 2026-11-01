@@ -14,3 +14,7 @@
 - 换设备时在“我的”页面导出 / 导入记录。
 - 跟读打分需要浏览器支持语音识别（电脑和安卓上的 Chrome 效果最好）。
 - 词库在 `data/words.js`，句子在 `data/phrases.js`，可以直接添加。
+
+## 发音
+- 单词和句子的发音是用开源语音模型 [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M)（Apache-2.0）提前生成的美式女声录音，放在 `audio/` 里。
+- 新加单词或句子后，运行 `tools/gen_audio.py` 补生成录音；没有录音的内容会自动改用浏览器自带的发音。

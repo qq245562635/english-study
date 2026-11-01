@@ -79,7 +79,23 @@
     pickVoice();
     speechSynthesis.onvoiceschanged = pickVoice;
   }
+  // 优先播放提前录好的真人风格录音（audio/），没有录音时才用浏览器自带发音
+  const player = new Audio();
+  player.preservesPitch = true;
   function speak(text, rate) {
+    const file = window.AUDIO && window.AUDIO[text];
+    if (file) {
+      if ("speechSynthesis" in window) speechSynthesis.cancel();
+      player.pause();
+      player.src = "audio/" + file + ".mp3";
+      // 录音本身是正常语速；设置里的“稍慢”等在此基础上调整
+      player.playbackRate = Math.max(0.5, Math.min(1.1, (rate || S.settings.rate) + 0.1));
+      player.play().catch(() => speakTTS(text, rate));
+      return;
+    }
+    speakTTS(text, rate);
+  }
+  function speakTTS(text, rate) {
     if (!("speechSynthesis" in window)) { toast("这个浏览器不支持发音，建议用 Chrome 或 Safari"); return; }
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
@@ -529,6 +545,7 @@
   const PAGES = { today: renderToday, words: renderWords, phrases: renderPhrases, me: renderMe };
   function go(tab) {
     if ("speechSynthesis" in window) speechSynthesis.cancel();
+    player.pause();
     document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
     window.scrollTo(0, 0);
     PAGES[tab]();
