@@ -52,6 +52,14 @@
       };
     });
 
+    // 阅读：用最近一次做题的成绩
+    out.readings = {};
+    const ra = a.readings || {}, rb = b.readings || {};
+    new Set([...Object.keys(ra), ...Object.keys(rb)]).forEach((k) => {
+      const x = ra[k], y = rb[k];
+      out.readings[k] = !x ? y : !y ? x : ((y.last || 0) > (x.last || 0) ? y : x);
+    });
+
     // 设置：用最近改过的那份
     const useB = (b.settingsAt || 0) > (a.settingsAt || 0);
     out.settings = Object.assign({}, useB ? b.settings : a.settings);

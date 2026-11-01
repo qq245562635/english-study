@@ -26,6 +26,11 @@ def texts():
     for block in re.findall(r"lines: `(.*?)`", phrases, re.S):
         for line in block.strip().split("\n"):
             out.append(line.split("|")[0])
+    # 阅读短文：每段一个录音（用 node 读取 JS 数据，避免手写解析）
+    js = ("global.window={};require(process.argv[1]);"
+          "console.log(JSON.stringify(window.READINGS.flatMap(r=>[r.title,...r.paras.map(p=>p[0])])))")
+    out += json.loads(subprocess.run(["node", "-e", js, os.path.join(ROOT, "data/readings.js")],
+                                     capture_output=True, text=True, check=True).stdout)
     out += EXTRA
     seen, res = set(), []
     for t in out:

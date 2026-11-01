@@ -26,6 +26,7 @@
     words: {},      // word -> { box, due, seen }
     phrases: {},    // phraseId -> 学会的日期
     days: {},       // 日期 -> { newWords, reviewed, phrases, done }
+    readings: {},   // 短文 id -> { score, total, date, last }
     settings: { newPerDay: 5, phrasesPerDay: 3, rate: 0.9 },
   };
   let S = load();
@@ -358,6 +359,11 @@
           ${phrasesDone ? "" : `<button class="btn primary" id="goPhrases">开始</button>`}
         </div>
       </div>
+      ${(() => { const nr = READINGS.find((x) => !S.readings[x.id]); return nr ? `<div class="card"><div class="task" style="padding:0">
+          <div class="check">📖</div>
+          <div class="info"><div class="title">选做：读一篇短文（约 5 分钟）</div>
+          <div class="muted small">${esc(nr.title)} · ${esc(nr.titleZh)}</div></div>
+          <button class="btn" id="goRead">去读</button></div></div>` : ""; })()}
       ${rec.done ? `<div class="card"><h3>还想多学一点？</h3>
         <div class="row wrap"><button class="btn" id="moreWords">再学 5 个新单词</button>
         <button class="btn" id="morePhrases">再学 3 句</button></div></div>` : ""}
@@ -369,6 +375,7 @@
     const g = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
     g("goWords", () => startWordSession());
     g("goSieve", () => startSieve());
+    g("goRead", () => { const nr = READINGS.find((x) => !S.readings[x.id]); if (nr) openReading(nr.id); });
     g("goPhrases", () => startPhraseSession());
     g("moreWords", () => startWordSession(5));
     g("morePhrases", () => startPhraseSession(3));
@@ -628,6 +635,104 @@
     show();
   }
 
+  // ---------- 页面：阅读 ----------
+  const READINGS = window.READINGS || [];
+  function renderReading() {
+    const done = READINGS.filter((r) => S.readings[r.id]).length;
+    h(`<p class="muted small">简单的小故事和小新闻（为练习编写，不是真实新闻）。先读，再做题。不会的地方可以点开中文。</p>
+      <p class="muted small">已读 ${done} / ${READINGS.length} 篇</p>
+      ${READINGS.map((r) => {
+        const rec = S.readings[r.id];
+        return `<button class="card read-item" data-read="${r.id}">
+          <div class="row"><span class="pill ${r.type === "故事" ? "s2" : "s1"}">${r.type}</span>
+          <span class="muted small">${"★".repeat(r.level)}${"☆".repeat(3 - r.level)}</span>
+          <span style="flex:1"></span>
+          ${rec ? `<span class="pill ${rec.score === rec.total ? "s3" : "s1"}">${rec.score}/${rec.total}</span>` : `<span class="pill s0">未读</span>`}</div>
+          <div class="read-title">${esc(r.title)}</div>
+          <div class="muted small">${esc(r.titleZh)}</div></button>`;
+      }).join("")}`);
+    view.querySelectorAll("[data-read]").forEach((b) => (b.onclick = () => openReading(b.dataset.read)));
+  }
+
+  function openReading(id) {
+    const r = READINGS.find((x) => x.id === id);
+    if (!r) return;
+    currentTab = "session";
+    window.scrollTo(0, 0);
+    const answers = new Array(r.questions.length).fill(null);
+    let submitted = false;
+    h(`<button class="btn" id="back">← 返回列表</button><p></p>
+      <div class="card article">
+        <div class="row"><span class="pill ${r.type === "故事" ? "s2" : "s1"}">${r.type}</span><span style="flex:1"></span>
+          <button class="btn" id="playAll">▶️ 全文朗读</button></div>
+        <h2 style="margin-top:10px">${esc(r.title)}</h2>
+        ${r.paras.map((p, i) => `<div class="para">
+          <div class="row" style="align-items:flex-start"><p class="en">${esc(p[0])}</p>
+          <button class="icon-btn" data-say="${esc(p[0])}" aria-label="朗读这一段">🔊</button></div>
+          <details><summary>看中文</summary><p class="zh">${esc(p[1])}</p></details></div>`).join("")}
+      </div>
+      <div class="card"><h3>📝 重点词</h3>
+        ${r.words.map(([w, zh]) => `<div class="row" style="padding:4px 0"><button class="icon-btn" data-say="${esc(w)}" aria-label="发音">🔊</button>
+          <b>${esc(w)}</b><span class="muted">${esc(zh)}</span></div>`).join("")}
+      </div>
+      <div class="card"><h3>✅ 阅读理解</h3>
+        ${r.questions.map((q, qi) => `<div class="quiz" data-q="${qi}">
+          <div class="q">${qi + 1}. ${esc(q.q)}</div>
+          <details class="small"><summary>看题目中文</summary><span class="muted">${esc(q.qZh)}</span></details>
+          ${q.options.map((o, oi) => `<button class="opt" data-q="${qi}" data-o="${oi}">${String.fromCharCode(65 + oi)}. ${esc(o)}</button>`).join("")}
+          <div class="why" hidden></div></div>`).join("")}
+        <button class="btn primary block" id="submit" disabled>提交答案</button>
+        <div id="score"></div>
+      </div>`);
+    document.getElementById("back").onclick = () => go("reading");
+    // 全文朗读：一段接一段
+    document.getElementById("playAll").onclick = () => {
+      let i = 0;
+      const next = () => {
+        if (i >= r.paras.length) { player.onended = null; return; }
+        const file = window.AUDIO && window.AUDIO[r.paras[i][0]];
+        if (!file) { speak(r.paras.map((p) => p[0]).join(" ")); player.onended = null; return; }
+        speak(r.paras[i][0]);
+        i++;
+        player.onended = next;
+      };
+      next();
+    };
+    const submit = document.getElementById("submit");
+    view.querySelectorAll(".opt").forEach((b) => (b.onclick = () => {
+      if (submitted) return;
+      const qi = Number(b.dataset.q);
+      answers[qi] = Number(b.dataset.o);
+      view.querySelectorAll(`.opt[data-q="${qi}"]`).forEach((x) => x.classList.toggle("picked", x === b));
+      submit.disabled = answers.some((a) => a === null);
+    }));
+    submit.onclick = () => {
+      submitted = true;
+      submit.hidden = true;
+      let score = 0;
+      r.questions.forEach((q, qi) => {
+        const ok = answers[qi] === q.answer;
+        if (ok) score++;
+        view.querySelectorAll(`.opt[data-q="${qi}"]`).forEach((x) => {
+          const oi = Number(x.dataset.o);
+          if (oi === q.answer) x.classList.add("right");
+          else if (oi === answers[qi]) x.classList.add("wrong");
+        });
+        const why = view.querySelector(`.quiz[data-q="${qi}"] .why`);
+        why.hidden = false;
+        why.innerHTML = `${ok ? "✅ 答对了。" : "❌ 正确答案是 " + String.fromCharCode(65 + q.answer) + "。"}${esc(q.why)}`;
+      });
+      S.readings[r.id] = { score, total: r.questions.length, date: today(), last: Date.now() };
+      save();
+      const nextR = READINGS.find((x) => !S.readings[x.id]);
+      document.getElementById("score").innerHTML = `<div class="result ${score === r.questions.length ? "good" : score ? "warn" : "bad"}">得分 ${score} / ${r.questions.length}。${score === r.questions.length ? "全对，太棒了！" : "看看上面的解析，再读一遍原文对应的句子。"}</div>
+        <p></p><div class="row wrap"><button class="btn" id="retry">再做一次</button>${nextR ? `<button class="btn primary" id="nextR">下一篇</button>` : ""}</div>`;
+      document.getElementById("retry").onclick = () => openReading(r.id);
+      const nb = document.getElementById("nextR");
+      if (nb) nb.onclick = () => openReading(nextR.id);
+    };
+  }
+
   // ---------- 页面：句子库 ----------
   let openScene = null;
   function renderPhrases() {
@@ -775,10 +880,11 @@
   }
 
   // ---------- 导航 ----------
-  const PAGES = { today: renderToday, words: renderWords, phrases: renderPhrases, me: renderMe };
+  const PAGES = { today: renderToday, words: renderWords, phrases: renderPhrases, reading: renderReading, me: renderMe };
   function go(tab) {
     if ("speechSynthesis" in window) speechSynthesis.cancel();
     player.pause();
+    player.onended = null;
     document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
     window.scrollTo(0, 0);
     currentTab = tab;

@@ -35,6 +35,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body {
   background: var(--bg);
@@ -194,3 +195,20 @@ main { max-width: 640px; margin: 0 auto; padding: 16px; }
 .chip-say { padding: 0 8px; font-size: 14px; border-left: 1px solid var(--line) !important; }
 .chip.unknown { background: var(--warn-soft); border-color: var(--warn); }
 .chip.unknown .chip-word { color: var(--warn); }
+
+/* 阅读 */
+.read-item { display: block; width: 100%; text-align: left; }
+.read-title { font-weight: 700; font-size: 17px; margin-top: 6px; }
+.article .para { border-top: 1px solid var(--line); padding: 8px 0; }
+.article .para:first-of-type { border-top: 0; }
+.article .en { font-size: 17px; line-height: 1.7; margin: 0; flex: 1; }
+.article .zh { color: var(--muted); margin: 6px 0 0; }
+details summary { color: var(--primary); cursor: pointer; font-size: 14px; margin-top: 4px; }
+.quiz { padding: 12px 0; border-top: 1px solid var(--line); }
+.quiz:first-of-type { border-top: 0; }
+.quiz .q { font-weight: 600; }
+.opt { display: block; width: 100%; text-align: left; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); min-height: 44px; }
+.opt.picked { border-color: var(--primary); background: var(--primary-soft); }
+.opt.right { border-color: var(--good); background: var(--good-soft); color: var(--good); font-weight: 600; }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+.quiz .why { margin-top: 8px; font-size: 14px; color: var(--muted); }
