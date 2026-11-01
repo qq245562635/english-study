@@ -259,6 +259,16 @@
     save();
   }
 
+  // 标记为“早就会了”：直接算已掌握，60 天后才偶尔抽查一次，不占每天新词名额
+  function markKnown(list) {
+    const t = today();
+    const top = INTERVALS.length - 1;
+    list.forEach((w) => {
+      S.words[w] = { box: top, due: addDays(t, INTERVALS[top]), seen: t, last: Date.now(), known: true };
+    });
+    save();
+  }
+
   // ---------- 句子逻辑 ----------
   function todaysPhrases() {
     const t = today();
@@ -351,10 +361,14 @@
       ${rec.done ? `<div class="card"><h3>还想多学一点？</h3>
         <div class="row wrap"><button class="btn" id="moreWords">再学 5 个新单词</button>
         <button class="btn" id="morePhrases">再学 3 句</button></div></div>` : ""}
+      ${Object.keys(S.words).length < 40 ? `<div class="card"><h3>单词太简单？</h3>
+        <p class="muted small" style="margin:0 0 10px">新单词卡片上可以点“我认识，跳过”。也可以先用“快速筛词”把会的词一次性筛掉。</p>
+        <button class="btn block" id="goSieve">⚡ 快速筛词</button></div>` : ""}
       <div class="card"><h3>💡 小建议</h3><p class="muted small">点 🔊 听美式发音，然后自己大声说出来。开口说比只看有用得多。</p></div>
     `);
     const g = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
     g("goWords", () => startWordSession());
+    g("goSieve", () => startSieve());
     g("goPhrases", () => startPhraseSession());
     g("moreWords", () => startWordSession(5));
     g("morePhrases", () => startPhraseSession(3));
@@ -406,9 +420,13 @@
           </div>
           <p class="muted small" id="hint">${c.isNew ? "先听发音、跟着读一遍，再点下面看意思" : "想一想它的意思，再点下面看答案"}</p>
         </div>
-        <div id="actions"><button class="btn primary block" id="flip">看意思</button></div>`);
+        <div id="actions">${c.isNew
+          ? `<div class="row"><button class="btn" style="flex:1" id="known">我认识，跳过</button><button class="btn primary" style="flex:1" id="flip">看意思</button></div>`
+          : `<button class="btn primary block" id="flip">看意思</button>`}</div>`);
       speak(c.w);
       document.getElementById("flip").onclick = flip;
+      const kb = document.getElementById("known");
+      if (kb) kb.onclick = skipKnown;
     }
     function flip() {
       if (flipped) return;
@@ -421,6 +439,17 @@
         : `<div class="grid3"><button class="btn bad" data-g="0">不认识</button>
            <button class="btn warn" data-g="1">模糊</button><button class="btn good" data-g="2">认识</button></div>`;
       document.querySelectorAll("[data-g]").forEach((b) => (b.onclick = () => answer(Number(b.dataset.g))));
+    }
+    // 认识的新词直接标为已会，再补一个新词进来，保证每天学到的都是不会的
+    function skipKnown() {
+      const c = queue.shift();
+      markKnown([c.w]);
+      const inQueue = new Set(queue.map((x) => x.w));
+      const more = WORDS.find((x) => !wordState(x.w) && !inQueue.has(x.w));
+      if (more) queue.push({ ...more, isNew: true });
+      else doneCount++;
+      toast("已跳过：" + c.w);
+      show();
     }
     function answer(g) {
       const c = queue.shift();
@@ -519,7 +548,10 @@
     const counts = [0, 0, 0, 0];
     WORDS.forEach((x) => counts[wordLevel(x.w)]++);
     const filters = [["all", "全部 " + WORDS.length], ["1", "学习中 " + counts[1]], ["2", "熟悉 " + counts[2]], ["3", "已掌握 " + counts[3]], ["0", "未学 " + counts[0]]];
-    h(`<input class="search" id="q" placeholder="搜索单词或中文" value="${esc(wordQuery)}">
+    h(`${counts[0] ? `<div class="card"><h3>觉得单词太简单？</h3>
+        <p class="muted small" style="margin:0 0 10px">用“快速筛词”一次看 30 个，只点出不会的，其余直接标为已会。几分钟就能跳到适合你的难度。</p>
+        <button class="btn primary block" id="sieve">⚡ 快速筛词</button></div>` : ""}
+      <input class="search" id="q" placeholder="搜索单词或中文" value="${esc(wordQuery)}">
       <div class="filters">${filters.map(([k, t]) => `<button data-f="${k}" class="${wordFilter === k ? "on" : ""}">${t}</button>`).join("")}</div>
       <div class="card wlist" id="list"></div>`);
     function fill() {
@@ -538,7 +570,62 @@
     }
     fill();
     document.getElementById("q").oninput = (e) => { wordQuery = e.target.value; fill(); };
+    const sb = document.getElementById("sieve");
+    if (sb) sb.onclick = startSieve;
     view.querySelectorAll("[data-f]").forEach((b) => (b.onclick = () => { wordFilter = b.dataset.f; renderWords(); }));
+  }
+
+  // ---------- 快速筛词 ----------
+  const SIEVE_SIZE = 30;
+  function startSieve() {
+    currentTab = "session";
+    let totalKnown = 0;
+    let keptAside = new Set(); // 本轮标成“不会”的词，留给每天的新词学习
+    function batch() {
+      return WORDS.filter((x) => !wordState(x.w) && !keptAside.has(x.w)).slice(0, SIEVE_SIZE);
+    }
+    function show() {
+      const list = batch();
+      if (!list.length) { finish(); return; }
+      const unknown = new Set();
+      h(`<div class="card"><h2>⚡ 快速筛词</h2>
+          <p class="muted small" style="margin:0">点一下<b>不认识</b>的词（会变成橙色）。认识的不用点。点 🔊 可以听发音。</p></div>
+        <div class="card"><div class="chips">${list.map((x) => `<div class="chip" data-w="${esc(x.w)}">
+            <button class="chip-word" data-pick="${esc(x.w)}">${esc(x.w)}</button>
+            <button class="chip-say" data-say="${esc(x.w)}" aria-label="发音">🔊</button></div>`).join("")}</div></div>
+        <button class="btn primary block" id="done"></button>
+        <p></p><button class="btn block" id="stop">先到这里</button>
+        <p class="muted small" style="text-align:center">已标为已会 ${totalKnown} 个</p>`);
+      const doneBtn = document.getElementById("done");
+      const label = () => { doneBtn.textContent = `其余 ${list.length - unknown.size} 个我都认识，下一组`; };
+      label();
+      view.querySelectorAll("[data-pick]").forEach((b) => (b.onclick = () => {
+        const w = b.dataset.pick;
+        unknown.has(w) ? unknown.delete(w) : unknown.add(w);
+        b.parentElement.classList.toggle("unknown", unknown.has(w));
+        label();
+      }));
+      doneBtn.onclick = () => {
+        const known = list.filter((x) => !unknown.has(x.w)).map((x) => x.w);
+        markKnown(known);
+        totalKnown += known.length;
+        unknown.forEach((w) => keptAside.add(w));
+        // 一组里不会的词超过一半，说明已经到你的水平了
+        if (unknown.size >= list.length / 2) { finish(true); return; }
+        show();
+      };
+      document.getElementById("stop").onclick = () => finish();
+    }
+    function finish(atLevel) {
+      const next = nextNewWords(3).map((x) => x.w).join("、");
+      h(`<div class="card hero-done"><div class="big">🎯</div><h2>${atLevel ? "找到你的起点了" : "筛词完成"}</h2>
+        <p class="muted">这次标为已会 ${totalKnown} 个词。${next ? "接下来每天的新单词从 " + esc(next) + " 等开始。" : ""}</p>
+        <button class="btn primary block" id="home">回到今天</button>
+        <p></p><button class="btn block" id="list">看单词库</button></div>`);
+      document.getElementById("home").onclick = () => go("today");
+      document.getElementById("list").onclick = () => go("words");
+    }
+    show();
   }
 
   // ---------- 页面：句子库 ----------

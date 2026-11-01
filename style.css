@@ -185,3 +185,12 @@ main { max-width: 640px; margin: 0 auto; padding: 16px; }
   background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 20;
   max-width: calc(100% - 32px);
 }
+
+/* 快速筛词 */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: stretch; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); }
+.chip button { border: 0; background: none; min-height: 40px; }
+.chip-word { padding: 6px 10px; font-weight: 600; font-size: 16px; }
+.chip-say { padding: 0 8px; font-size: 14px; border-left: 1px solid var(--line) !important; }
+.chip.unknown { background: var(--warn-soft); border-color: var(--warn); }
+.chip.unknown .chip-word { color: var(--warn); }

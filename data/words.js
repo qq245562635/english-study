@@ -251,4 +251,153 @@ delay|n./v.|延迟|Sorry for the delay.|抱歉延误了。
 improve|v.|改善，提高|I want to improve my English.|我想提高我的英语。
 practice|v./n.|练习|Practice makes perfect.|熟能生巧。
 progress|n.|进步，进展|You are making good progress.|你进步很大。
+colleague|n.|同事（较正式）|I'd like you to meet my colleague, Sarah.|我想介绍你认识我的同事 Sarah。
+supervisor|n.|主管|Please talk to your supervisor first.|请先和你的主管谈一下。
+employee|n.|员工|The company has 200 employees.|公司有200名员工。
+employer|n.|雇主|My employer pays for my health insurance.|我的雇主为我支付医疗保险。
+candidate|n.|候选人，应聘者|We interviewed five candidates.|我们面试了五位候选人。
+qualified|adj.|有资格的，胜任的|I think I'm qualified for this job.|我认为我能胜任这份工作。
+requirement|n.|要求，必要条件|What are the requirements for this role?|这个职位有什么要求？
+reference|n.|推荐人；参考|Can you provide two references?|你能提供两位推荐人吗？
+background|n.|背景，经历|Tell me about your background.|说说你的背景吧。
+strength|n.|优点，长处|What are your strengths?|你的优点是什么？
+weakness|n.|缺点，弱点|My weakness is that I'm too detail-oriented.|我的缺点是太注重细节。
+achievement|n.|成就|What is your biggest achievement?|你最大的成就是什么？
+accomplish|v.|完成，实现|We accomplished a lot this year.|我们今年完成了很多事。
+promotion|n.|升职|She got a promotion last month.|她上个月升职了。
+raise|n./v.|加薪；提出|I'd like to ask for a raise.|我想申请加薪。
+negotiate|v.|谈判，协商|Can we negotiate the salary?|薪资可以谈吗？
+offer|n./v.|录用通知；提供|I got a job offer!|我拿到录用通知了！
+accept|v.|接受|I'm happy to accept the offer.|我很乐意接受这份工作。
+decline|v.|婉拒；下降|I have to decline the invitation.|我不得不婉拒这个邀请。
+resign|v.|辞职|He resigned last week.|他上周辞职了。
+quit|v.|辞职；放弃|I quit my old job.|我辞掉了以前的工作。
+fire|v.|解雇|He was fired for being late too often.|他因为经常迟到被解雇了。
+lay off|phr.|裁员|The company laid off 50 people.|公司裁掉了50个人。
+onboarding|n.|入职培训|Onboarding takes about two weeks.|入职培训大约需要两周。
+orientation|n.|新员工介绍会|New employees attend orientation on Monday.|新员工周一参加入职介绍会。
+paycheck|n.|工资（支票）|I get my paycheck every two weeks.|我每两周领一次工资。
+overtime|n.|加班；加班费|Do you pay for overtime?|加班有加班费吗？
+paid time off|phr.|带薪休假（PTO）|How many days of paid time off do I get?|我有多少天带薪假？
+remote|adj.|远程的|Is this position remote?|这个职位可以远程工作吗？
+hybrid|adj.|混合办公的|We have a hybrid schedule: three days in the office.|我们是混合办公，三天在公司。
+commute|n./v.|通勤|My commute is about 40 minutes.|我通勤大约40分钟。
+priority|n.|优先事项|What's our top priority this week?|我们这周最优先的是什么？
+prioritize|v.|确定优先顺序|We need to prioritize these tasks.|我们需要给这些任务排优先级。
+estimate|n./v.|估计|Can you give me a rough estimate?|你能给我一个大概的估计吗？
+budget|n.|预算|We are over budget.|我们超预算了。
+expense|n.|费用，开支|Keep your receipts for travel expenses.|保留好差旅费的收据。
+revenue|n.|收入，营收|Our revenue grew by 10% this year.|我们今年营收增长了10%。
+profit|n.|利润|The profit was lower than expected.|利润比预期低。
+client|n.|客户（服务型）|I have a call with a client at 3.|我三点要和客户通电话。
+vendor|n.|供应商|We need to find a new vendor.|我们需要找一个新供应商。
+proposal|n.|提案，方案|I'll send you the proposal tomorrow.|我明天把方案发给你。
+agenda|n.|议程|What's on the agenda today?|今天的议程有哪些？
+presentation|n.|演示，汇报|I'm giving a presentation on Friday.|我周五要做个汇报。
+feedback|n.|反馈|Thanks for the feedback.|谢谢你的反馈。
+performance|n.|表现，绩效|We'll have a performance review next month.|我们下个月有绩效评估。
+evaluate|v.|评估|We need to evaluate the results.|我们需要评估结果。
+efficient|adj.|高效的|This new process is more efficient.|这个新流程更高效。
+effective|adj.|有效的|That was a very effective meeting.|那是一次很有效的会议。
+productive|adj.|富有成效的|I had a productive day.|我今天很有效率。
+flexible|adj.|灵活的|My schedule is flexible.|我的时间很灵活。
+reliable|adj.|可靠的|She is very reliable.|她非常可靠。
+professional|adj./n.|专业的；专业人士|Please keep it professional.|请保持专业。
+experienced|adj.|有经验的|We need someone more experienced.|我们需要更有经验的人。
+familiar with|phr.|熟悉|Are you familiar with Excel?|你熟悉 Excel 吗？
+handle|v.|处理|I can handle it.|我能处理。
+manage|v.|管理；设法做到|I managed to finish on time.|我设法按时完成了。
+coordinate|v.|协调|I'll coordinate with the other team.|我会和另一个团队协调。
+collaborate|v.|合作|We collaborate closely with the design team.|我们和设计团队紧密合作。
+communicate|v.|沟通|We need to communicate better.|我们需要更好地沟通。
+clarify|v.|澄清，说明|Could you clarify what you mean?|你能说明一下你的意思吗？
+mention|v.|提到|As I mentioned earlier, ...|就像我之前提到的……
+discuss|v.|讨论|Let's discuss this tomorrow.|我们明天讨论这个吧。
+assign|v.|分配，指派|My manager assigned me a new project.|经理给我分配了一个新项目。
+delegate|v.|委派|You should delegate some of your work.|你应该把一些工作委派出去。
+approve|v.|批准|Has the budget been approved?|预算批了吗？
+review|v./n.|审阅；复查|Can you review my report?|你能看一下我的报告吗？
+submit|v.|提交|Please submit your timesheet by Friday.|请在周五前提交工时表。
+complete|v./adj.|完成；完整的|The project is almost complete.|项目快完成了。
+postpone|v.|推迟|The meeting was postponed until next week.|会议推迟到下周了。
+urgent|adj.|紧急的|This is urgent. Please call me back.|这件事很急，请给我回电话。
+on track|phr.|进展顺利，按计划进行|Are we still on track?|我们还在按计划进行吗？
+behind schedule|phr.|进度落后|We're a little behind schedule.|我们进度有点落后。
+ahead of|phr.|提前；在……前面|We finished two days ahead of schedule.|我们提前两天完成了。
+as soon as possible|phr.|尽快（ASAP）|Please reply as soon as possible.|请尽快回复。
+get back to|phr.|回复（某人）|I'll get back to you by tomorrow.|我明天前回复你。
+reach out|phr.|联系|Feel free to reach out if you have questions.|有问题随时联系我。
+touch base|phr.|简短联系，碰个头|Let's touch base next week.|我们下周碰一下。
+catch up|phr.|叙旧；赶上进度|Let's catch up over coffee.|我们喝杯咖啡聊聊近况吧。
+look into|phr.|调查，研究|I'll look into it.|我会查一下这件事。
+take care of|phr.|处理，照顾|Don't worry, I'll take care of it.|别担心，我来处理。
+come up with|phr.|想出|We need to come up with a new plan.|我们需要想出一个新计划。
+run out of|phr.|用完|We ran out of time.|我们没时间了。
+point out|phr.|指出|Thanks for pointing that out.|谢谢你指出来。
+work on|phr.|致力于，正在做|I'm working on the report now.|我正在写报告。
+deal with|phr.|处理，应对|How do you deal with stress?|你怎么应对压力？
+opportunity|n.|机会|Thank you for this opportunity.|谢谢你给我这个机会。
+challenge|n.|挑战|It was a big challenge for me.|这对我是个很大的挑战。
+pressure|n.|压力|I work well under pressure.|我在压力下也能做好工作。
+stress|n.|压力，紧张|I've been under a lot of stress lately.|我最近压力很大。
+conflict|n.|冲突|How do you handle conflict at work?|你怎么处理工作中的冲突？
+solve|v.|解决|We solved the problem together.|我们一起解决了这个问题。
+support|v./n.|支持|Thanks for your support.|谢谢你的支持。
+policy|n.|政策，规定|What's the company policy on remote work?|公司对远程办公有什么规定？
+procedure|n.|程序，步骤|Please follow the safety procedures.|请遵守安全程序。
+regulation|n.|规章，法规|We have to follow these regulations.|我们必须遵守这些规定。
+permission|n.|许可|Do I need permission to work from home?|在家办公需要批准吗？
+access|n./v.|访问权限；进入|I don't have access to this file.|我没有这个文件的权限。
+account manager|n.|客户经理|I'm the account manager for this client.|我是这个客户的客户经理。
+headquarters|n.|总部|Our headquarters is in Chicago.|我们总部在芝加哥。
+branch|n.|分公司，分行|We have a branch in Seattle.|我们在西雅图有分公司。
+industry|n.|行业|I've worked in this industry for ten years.|我在这个行业工作了十年。
+market|n.|市场|The market is very competitive.|市场竞争很激烈。
+competitor|n.|竞争对手|Our competitors are lowering their prices.|我们的竞争对手在降价。
+product|n.|产品|This is our newest product.|这是我们最新的产品。
+service|n.|服务|We provide great customer service.|我们提供优质的客户服务。
+quality|n.|质量|Quality is our top priority.|质量是我们的首要任务。
+complaint|n.|投诉|We received a complaint from a customer.|我们收到了一位客户的投诉。
+refund|n./v.|退款|I'd like a refund, please.|我想要退款。
+invoice|n.|发票，账单|I'll send you the invoice today.|我今天把账单发给你。
+receipt|n.|收据|Can I have a receipt?|可以给我收据吗？
+lease|n.|租约|I signed a one-year lease.|我签了一年的租约。
+landlord|n.|房东|I need to call my landlord about the heater.|我得打电话给房东说暖气的事。
+deposit|n./v.|押金；存款|The security deposit is one month's rent.|押金是一个月的房租。
+utilities|n.|水电煤等公用事业费|Are utilities included in the rent?|房租包括水电费吗？
+neighborhood|n.|街区，社区|It's a quiet neighborhood.|这是个安静的街区。
+license|n.|执照|I need to get a driver's license.|我需要考驾照。
+visa|n.|签证|My work visa expires next year.|我的工作签证明年到期。
+social security number|phr.|社会安全号（SSN）|You need a Social Security number to work.|工作需要社会安全号。
+credit|n.|信用|It's hard to rent without a credit history.|没有信用记录很难租房。
+emergency|n.|紧急情况|In an emergency, call 911.|紧急情况请拨打911。
+prescription|n.|处方|I need to pick up my prescription.|我需要去取处方药。
+pharmacy|n.|药店|Is there a pharmacy nearby?|附近有药店吗？
+symptom|n.|症状|What are your symptoms?|你有什么症状？
+afford|v.|负担得起|I can't afford a new car right now.|我现在买不起新车。
+convenient|adj.|方便的|Is Monday convenient for you?|周一对你方便吗？
+appropriate|adj.|合适的，恰当的|Is it appropriate to wear jeans to work?|穿牛仔裤上班合适吗？
+polite|adj.|有礼貌的|It's polite to say thank you.|说谢谢是礼貌的。
+honest|adj.|诚实的|To be honest, I'm not sure.|说实话，我不确定。
+confident|adj.|自信的|I feel more confident speaking English now.|我现在说英语更有自信了。
+nervous|adj.|紧张的|I was nervous before the interview.|面试前我很紧张。
+frustrated|adj.|沮丧的，恼火的|I'm frustrated with this software.|这个软件让我很恼火。
+excited|adj.|兴奋的，期待的|I'm excited to join the team.|我很期待加入团队。
+grateful|adj.|感激的|I'm grateful for your help.|我很感激你的帮助。
+definitely|adv.|肯定，当然|I'll definitely be there.|我一定会去。
+actually|adv.|实际上|Actually, I have a different idea.|其实我有个不同的想法。
+basically|adv.|基本上|Basically, we need more time.|基本上，我们需要更多时间。
+exactly|adv.|正是如此；精确地|Exactly! That's what I mean.|完全正确！我就是这个意思。
+especially|adv.|尤其|I like this job, especially the people.|我喜欢这份工作，尤其是这里的人。
+eventually|adv.|最终|We eventually found a solution.|我们最终找到了解决办法。
+recently|adv.|最近|I recently moved to Boston.|我最近搬到了波士顿。
+currently|adv.|目前|I'm currently looking for a job.|我目前在找工作。
+regarding|prep.|关于|I'm writing regarding your application.|我写信是关于你的申请。
+according to|phr.|根据|According to the report, sales are up.|根据报告，销售额上升了。
+instead|adv.|代替，反而|Let's meet on Tuesday instead.|我们改到周二见吧。
+otherwise|adv.|否则|Please confirm by noon; otherwise, we'll cancel.|请在中午前确认，否则我们会取消。
+however|adv.|然而|The plan is good. However, it's expensive.|计划很好，但是很贵。
+although|conj.|虽然|Although it was hard, I enjoyed it.|虽然很难，但我很享受。
+unless|conj.|除非|I'll be there unless something comes up.|除非有事，否则我会到。
+whether|conj.|是否|I'm not sure whether he's coming.|我不确定他来不来。
 `;
