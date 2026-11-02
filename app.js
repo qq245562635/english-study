@@ -27,6 +27,7 @@
     phrases: {},    // phraseId -> 学会的日期
     days: {},       // 日期 -> { newWords, reviewed, phrases, done }
     readings: {},   // 短文 id -> { score, total, date, last }
+    notebook: {},   // 我的句子本：id -> { zh, en, t, deleted }
     settings: { newPerDay: 5, phrasesPerDay: 3, rate: 0.9 },
   };
   let S = load();
@@ -733,6 +734,149 @@
     };
   }
 
+  // ---------- 页面：中译英 / 检查英文 ----------
+  let trMode = "zh2en";
+  let trDraft = { zh2en: "", check: "", meaning: "" };
+  const ttsCache = new Map();
+
+  // 朗读任意句子：有现成录音用录音，否则请 Cloudflare AI 生成，再不行用浏览器发音
+  async function speakAny(text) {
+    if (window.AUDIO && window.AUDIO[text]) { speak(text); return; }
+    if (Sync.on()) {
+      try {
+        let url = ttsCache.get(text);
+        if (!url) {
+          const res = await fetch("api/tts", {
+            method: "POST",
+            headers: { authorization: "Bearer " + Sync.token(), "content-type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+          if (!res.ok) throw new Error("tts");
+          url = URL.createObjectURL(await res.blob());
+          ttsCache.set(text, url);
+        }
+        if ("speechSynthesis" in window) speechSynthesis.cancel();
+        player.pause();
+        player.src = url;
+        player.playbackRate = Math.max(0.5, Math.min(1.1, S.settings.rate + 0.1));
+        await player.play();
+        return;
+      } catch (e) { /* 退回浏览器发音 */ }
+    }
+    speakTTS(text);
+  }
+
+  function noteId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function saveNote(en, zh) {
+    const exists = Object.values(S.notebook).find((n) => !n.deleted && n.en === en);
+    if (exists) { toast("句子本里已经有了"); return; }
+    const id = noteId();
+    S.notebook[id] = { en, zh: zh || "", t: Date.now() };
+    save();
+    toast("⭐ 已存到我的句子本");
+    renderNotebook();
+  }
+
+  function renderTranslate() {
+    const ready = Sync.available && Sync.on();
+    const isZh = trMode === "zh2en";
+    h(`<div class="seg"><button data-mode="zh2en" class="${isZh ? "on" : ""}">中文 → 英文</button><button data-mode="check" class="${!isZh ? "on" : ""}">检查我的英文</button></div>
+      <div class="card">
+        ${ready ? "" : `<div class="result warn" style="margin:0 0 10px">${Sync.available
+          ? "需要先在“我的”页面开启云端同步（用同一个密码保护你的免费 AI 额度）。"
+          : "这个功能要在 Cloudflare 网址上使用。"}</div>`}
+        <p class="muted small" style="margin:0 0 8px">${isZh
+          ? "输入中文，看看美国人会怎么说。建议先自己试着写，再用“检查我的英文”对照。"
+          : "先用英文写下你想说的话，AI 帮你改成自然的美式英文。写不出来的词可以先用中文代替。"}</p>
+        <textarea class="search ta" id="trIn" rows="4" maxlength="500" placeholder="${isZh ? "例如：我明天要请一天假，因为要去看医生。" : "例如：Tomorrow I want take one day leave because I see doctor."}">${esc(isZh ? trDraft.zh2en : trDraft.check)}</textarea>
+        ${isZh ? "" : `<input class="search" id="trMeaning" maxlength="500" placeholder="我想表达的意思（中文，可不填）" value="${esc(trDraft.meaning)}">`}
+        <button class="btn primary block" id="trGo" ${ready ? "" : "disabled"}>${isZh ? "翻译" : "帮我检查"}</button>
+      </div>
+      <div id="trOut"></div>
+      <div class="card" id="nb"></div>`);
+    view.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => { trMode = b.dataset.mode; renderTranslate(); }));
+    const inp = document.getElementById("trIn");
+    inp.oninput = () => { trDraft[trMode] = inp.value; };
+    const mi = document.getElementById("trMeaning");
+    if (mi) mi.oninput = () => { trDraft.meaning = mi.value; };
+    bindSpeak();
+    renderNotebook();
+    document.getElementById("trGo").onclick = runTranslate;
+  }
+  function renderNotebook() {
+    const box = document.getElementById("nb");
+    if (!box) return;
+    const notes = Object.entries(S.notebook).filter(([, n]) => !n.deleted).sort((a, b) => b[1].t - a[1].t);
+    box.innerHTML = `<h3>⭐ 我的句子本 <span class="muted small">${notes.length} 句</span></h3>
+      ${notes.length ? notes.map(([id, n]) => `<div class="phrase"><div class="row" style="align-items:flex-start">
+          <div style="flex:1"><div class="en">${esc(n.en)}</div>${n.zh ? `<div class="zh">${esc(n.zh)}</div>` : ""}</div>
+          <button class="icon-btn" data-speak="${esc(n.en)}" aria-label="朗读">🔊</button>
+          <button class="icon-btn" data-del="${id}" aria-label="删除">✕</button></div></div>`).join("")
+        : `<p class="muted small" style="margin:0">翻译或检查后点 ⭐，就能把好句子存在这里，随时复习。</p>`}`;
+    box.querySelectorAll("[data-speak]").forEach((b) => (b.onclick = () => speakAny(b.dataset.speak)));
+    box.querySelectorAll("[data-del]").forEach((b) => (b.onclick = () => {
+      const n = S.notebook[b.dataset.del];
+      if (n) { n.deleted = true; n.t = Date.now(); save(); renderNotebook(); }
+    }));
+  }
+  function bindSpeak() {
+    view.querySelectorAll("[data-speak]").forEach((b) => (b.onclick = () => speakAny(b.dataset.speak)));
+  }
+
+  async function runTranslate() {
+    const text = document.getElementById("trIn").value.trim();
+    if (!text) { toast(trMode === "zh2en" ? "请先输入中文" : "请先写一句英文"); return; }
+    const mode = trMode;
+    const meaning = mode === "check" ? (document.getElementById("trMeaning").value || "").trim() : "";
+    const btn = document.getElementById("trGo");
+    const out = document.getElementById("trOut");
+    btn.disabled = true;
+    btn.textContent = "AI 思考中……";
+    out.innerHTML = "";
+    try {
+      const res = await fetch("api/translate", {
+        method: "POST",
+        headers: { authorization: "Bearer " + Sync.token(), "content-type": "application/json" },
+        body: JSON.stringify({ text, mode, meaning }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(res.status === 401 ? "同步密码不对，请在“我的”页面重新开启同步" : res.status === 413 ? "太长了，请控制在 500 字以内" : "AI 暂时没有回应，请稍后再试");
+      }
+      if (trMode !== mode || !document.getElementById("trOut")) return; // 用户已经切走了
+      const zhForSave = mode === "zh2en" ? text : meaning;
+      const main = mode === "zh2en" ? d.english : d.corrected;
+      const line = (en, big) => `<div class="row" style="align-items:flex-start;margin-top:8px">
+          <div style="flex:1" class="${big ? "tr-main" : "en"}">${esc(en)}</div>
+          <button class="icon-btn" data-speak="${esc(en)}" aria-label="朗读">🔊</button>
+          <button class="icon-btn" data-save="${esc(en)}" aria-label="存到句子本">⭐</button>
+          <button class="icon-btn" data-copy="${esc(en)}" aria-label="复制">⧉</button></div>`;
+      out.innerHTML = `<div class="card">
+          ${mode === "check" ? `<h3>${main === text ? "✅ 写得很好" : "✏️ 修改后"}</h3>` : `<h3>美式英文</h3>`}
+          ${line(main, true)}
+          ${mode === "check" && main !== text ? `<p class="muted small" style="margin:8px 0 0">你写的：<s>${esc(text)}</s></p>` : ""}
+          ${d.feedback ? `<div class="result good" style="color:var(--text)">${esc(d.feedback)}</div>` : ""}
+          ${d.alternatives && d.alternatives.length ? `<h3 style="margin-top:14px">其他说法</h3>${d.alternatives.map((a) => line(a)).join("")}` : ""}
+          ${d.notes && d.notes.length ? `<h3 style="margin-top:14px">用词讲解</h3>${d.notes.map((n) => `<div class="row" style="padding:4px 0;align-items:flex-start">
+              <button class="icon-btn" data-speak="${esc(n.en)}" aria-label="发音">🔊</button>
+              <div><b>${esc(n.en)}</b><div class="muted small">${esc(n.zh)}</div></div></div>`).join("")}` : ""}
+          ${d.fallback ? `<p class="muted small">（AI 繁忙，这次用的是普通翻译）</p>` : ""}
+        </div>`;
+      bindSpeak();
+      out.querySelectorAll("[data-save]").forEach((b) => (b.onclick = () => { saveNote(b.dataset.save, zhForSave); }));
+      out.querySelectorAll("[data-copy]").forEach((b) => (b.onclick = () => {
+        (navigator.clipboard ? navigator.clipboard.writeText(b.dataset.copy) : Promise.reject())
+          .then(() => toast("已复制"), () => toast("复制失败，请长按文字复制"));
+      }));
+      speakAny(main);
+    } catch (e) {
+      out.innerHTML = `<div class="result bad">${esc(e.message || "出错了")}</div>`;
+    } finally {
+      const b2 = document.getElementById("trGo");
+      if (b2) { b2.disabled = false; b2.textContent = mode === "zh2en" ? "翻译" : "帮我检查"; }
+    }
+  }
+
   // ---------- 页面：句子库 ----------
   let openScene = null;
   function renderPhrases() {
@@ -880,18 +1024,20 @@
   }
 
   // ---------- 导航 ----------
-  const PAGES = { today: renderToday, words: renderWords, phrases: renderPhrases, reading: renderReading, me: renderMe };
+  const PAGES = { today: renderToday, words: renderWords, phrases: renderPhrases, reading: renderReading, me: renderMe, translate: renderTranslate };
   function go(tab) {
     if ("speechSynthesis" in window) speechSynthesis.cancel();
     player.pause();
     player.onended = null;
     document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+    document.getElementById("trBtn").classList.toggle("on", tab === "translate");
     window.scrollTo(0, 0);
     currentTab = tab;
     PAGES[tab]();
     updateStreak();
   }
   document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => go(b.dataset.tab)));
+  document.getElementById("trBtn").onclick = () => go("translate");
   go("today");
   Sync.init().then(() => refresh());
 })();

@@ -212,3 +212,12 @@ details summary { color: var(--primary); cursor: pointer; font-size: 14px; margi
 .opt.right { border-color: var(--good); background: var(--good-soft); color: var(--good); font-weight: 600; }
 .opt.wrong { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
 .quiz .why { margin-top: 8px; font-size: 14px; color: var(--muted); }
+
+/* 中译英 */
+.tr-btn { border: 1px solid var(--primary); background: var(--card); color: var(--primary); border-radius: 999px; padding: 4px 10px; font-size: 14px; font-weight: 600; }
+.tr-btn.on { background: var(--primary); color: #fff; }
+.seg { display: flex; background: var(--line); border-radius: 10px; padding: 3px; margin-bottom: 12px; }
+.seg button { flex: 1; border: 0; background: none; padding: 8px; border-radius: 8px; font-size: 15px; color: var(--muted); }
+.seg button.on { background: var(--card); color: var(--text); font-weight: 600; box-shadow: var(--shadow); }
+textarea.ta { resize: vertical; min-height: 96px; line-height: 1.5; }
+.tr-main { font-size: 20px; font-weight: 700; line-height: 1.45; }

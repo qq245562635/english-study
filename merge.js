@@ -60,6 +60,14 @@
       out.readings[k] = !x ? y : !y ? x : ((y.last || 0) > (x.last || 0) ? y : x);
     });
 
+    // 我的句子本：按 id 合并，删除的条目用 deleted 标记，保留最近改动的那份
+    const na = a.notebook || {}, nb = b.notebook || {};
+    out.notebook = {};
+    new Set([...Object.keys(na), ...Object.keys(nb)]).forEach((k) => {
+      const x = na[k], y = nb[k];
+      out.notebook[k] = !x ? y : !y ? x : ((y.t || 0) > (x.t || 0) ? y : x);
+    });
+
     // 设置：用最近改过的那份
     const useB = (b.settingsAt || 0) > (a.settingsAt || 0);
     out.settings = Object.assign({}, useB ? b.settings : a.settings);
